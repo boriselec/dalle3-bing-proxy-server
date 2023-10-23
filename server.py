@@ -4,6 +4,7 @@ import os
 import threading
 from http.server import BaseHTTPRequestHandler, HTTPServer
 from dalle3 import Dalle
+import shutil
 
 hostName = "0.0.0.0"
 serverPort = 8081
@@ -20,7 +21,7 @@ class GenerationServer(BaseHTTPRequestHandler):
                     data = self.rfile.read(content_length).decode('utf-8')
 
                     # Define cookie using env or empty string
-                    cookie = "1cs6__B8gHKxn9ohRWOLeKYNTKNdfGVmasWfcJ2dc0XIF-FcOLpg7tCzLOo_Af0duEVgig0GH6QqfTzPSjB1Selw2OpqJkYDpdvhVt9fPz7H01pDgidU9pwai5ojGWB1D482pxZwcWGHVnulLTcQ9XnVheiCpdaBTX_Of5TEr2YU5MOi5Xgg6jCdRd27-mpsRG9oDstQroLbb31AghSFycw"
+                    cookie = os.getenv("BING_COOKIE")
 
                     # Set up logging
                     logging.basicConfig(level=logging.INFO)
@@ -33,6 +34,10 @@ class GenerationServer(BaseHTTPRequestHandler):
 
                     # Get the image URLs
                     urls = dalle.get_urls()
+
+                    if urls is None:
+                        self.send_error(500, "Cannot get image url")
+                        return
 
                     # Download the images to your specified folder
                     dalle.download([urls[0]], "images/")
@@ -56,7 +61,7 @@ class GenerationServer(BaseHTTPRequestHandler):
                     self.wfile.write(f.read())
                     f.close()
 
-                    os.remove("images")
+                    shutil.rmtree("images")
 
                 except RuntimeError:
                     logging.exception("Error processing request")
